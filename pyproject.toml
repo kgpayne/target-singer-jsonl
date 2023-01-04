@@ -1,0 +1,20 @@
+[tool.poetry]
+name = "target-singer-jsonl"
+version = "0.1.0"
+description = ""
+authors = ["Ken Payne <ken@meltano.com>"]
+license = "MIT"
+readme = "README.md"
+packages = [{include = "target_singer_jsonl"}]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+jsonschema = "^4.17.3"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.scripts]
+# CLI declaration
+target-singer-jsonl = 'target_singer_jsonl:main'
