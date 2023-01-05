@@ -1,24 +1,30 @@
 [tool.poetry]
 name = "target-singer-jsonl"
-version = "0.1.0"
-description = ""
+version = "0.0.0"
+description = "A Singer.io target for writing singer-formatted JSONL files to various destinations (e.g. local or s3)."
 authors = ["Ken Payne <ken@meltano.com>"]
 license = "MIT"
 readme = "README.md"
 packages = [{include = "target_singer_jsonl"}]
+keywords = [
+    "ELT",
+    "Singer.io",
+]
 
 [tool.poetry.dependencies]
 python = "^3.10"
 jsonschema = "^4.17.3"
 smart-open = {extras = ["s3"], version = "^6.3.0"}
 
-[tool.poetry.group.dev.dependencies]
-tap-carbon-intensity = {git = "https://gitlab.com/meltano/tap-carbon-intensity.git"}
-
-[build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
-
 [tool.poetry.scripts]
 # CLI declaration
 target-singer-jsonl = 'target_singer_jsonl:main'
+
+[build-system]
+requires = ["poetry-core>=1.0.8", "poetry-dynamic-versioning"]
+build-backend = "poetry_dynamic_versioning.backend"
+
+[tool.poetry-dynamic-versioning]
+enable = true
+vcs = "git"
+style = "semver"
