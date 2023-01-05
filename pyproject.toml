@@ -10,7 +10,7 @@ packages = [{include = "target_singer_jsonl"}]
 [tool.poetry.dependencies]
 python = "^3.10"
 jsonschema = "^4.17.3"
-smart-open = "^6.3.0"
+smart-open = {extras = ["s3"], version = "^6.3.0"}
 
 [tool.poetry.group.dev.dependencies]
 tap-carbon-intensity = {git = "https://gitlab.com/meltano/tap-carbon-intensity.git"}
