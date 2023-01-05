@@ -66,6 +66,8 @@ plugins:
       kind: string
     - name: s3.prefix
       kind: string
+    - name: add_record_metadata
+      kind: boolean
 jobs:
 - name: job-simple-test
   tasks:
