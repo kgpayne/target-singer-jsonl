@@ -1,0 +1,72 @@
+version: 1
+default_environment: dev
+project_id: target-singer-jsonl
+send_anonymous_usage_stats: true
+environments:
+- name: dev
+  config:
+    plugins:
+      loaders:
+      - name: target-singer-jsonl
+        config:
+          destination: local
+          local:
+            folder: output/extract/
+      - name: target-csv
+        config:
+          destination_path: output/
+      extractors:
+      - name: tap-singer-jsonl
+        config:
+          source: local
+          local:
+            folders:
+            - output/extract/
+            recursive: true
+plugins:
+  extractors:
+  - name: tap-singer-jsonl
+    namespace: tap_singer_jsonl
+    pip_url: tap-singer-jsonl
+    executable: tap-singer-jsonl
+    capabilities:
+    - discover
+    settings:
+    - name: source
+      kind: string
+    - name: local.folders
+      kind: array
+    - name: local.recursive
+      kind: boolean
+    - name: local.paths
+      kind: array
+    - name: s3.bucket
+      kind: string
+    - name: s3.prefix
+      kind: string
+    - name: s3.paths
+      kind: array
+  - name: tap-carbon-intensity
+    variant: meltano
+    pip_url: git+https://gitlab.com/meltano/tap-carbon-intensity.git
+  loaders:
+  - name: target-csv
+    variant: hotgluexyz
+    pip_url: git+https://github.com/hotgluexyz/target-csv.git
+  - name: target-singer-jsonl
+    namespace: target_singer_jsonl
+    pip_url: -e .
+    executable: target-singer-jsonl
+    settings:
+    - name: destination
+      kind: string
+    - name: local.folder
+      kind: string
+    - name: s3.bucket
+      kind: string
+    - name: s3.prefix
+      kind: string
+jobs:
+- name: job-simple-test
+  tasks:
+  - tap-carbon-intensity target-singer-jsonl tap-singer-jsonl target-csv
