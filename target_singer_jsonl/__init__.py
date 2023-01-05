@@ -6,12 +6,16 @@ import json
 import logging
 import sys
 from datetime import datetime
+from functools import reduce
 from pathlib import Path
 
 from jsonschema.validators import Draft4Validator
+from smart_open import open
 from smart_open.smart_open_lib import patch_pathlib
 
 _ = patch_pathlib()  # replace `Path.open` with `smart_open.open`
+
+logging.basicConfig(stream=sys.stderr, level=logging.INFO)
 
 logger = logging.getLogger(__name__)
 
@@ -26,6 +30,14 @@ stream_lines = {}
 now = datetime.now().strftime("%Y%m%dT%H%M%S%z")
 
 
+def join_slash(a, b):
+    return a.rstrip("/") + "/" + b.lstrip("/")
+
+
+def urljoin(*args):
+    return reduce(join_slash, args) if args else ""
+
+
 def emit_state(state):
     if state is not None:
         line = json.dumps(state)
@@ -34,26 +46,58 @@ def emit_state(state):
         sys.stdout.flush()
 
 
-def get_file_path(config, stream):
-    destination = config.get("destination", "local")
+def get_file_path(stream, destination, config):
+    filename = f"{stream}/{stream}-{now}.singer.gz"
     if destination == "local":
-        return Path(config["local"]["folder"]).joinpath(
-            f"{stream}/{stream}-{now}.jsonl.gz"
+        return Path(config["folder"]).joinpath(filename)
+    elif destination == "s3":
+        bucket = config["bucket"]
+        prefix = config["prefix"]
+        return urljoin(f"s3://{bucket}/{prefix}/", filename)
+    else:
+        raise KeyError(f"Destination {destination} not supported.")
+
+
+def write_lines_local(destination, config, stream, lines):
+    if stream not in stream_files:
+        stream_files[stream] = get_file_path(
+            stream=stream, destination=destination, config=config
         )
-    raise KeyError(f"Destination {destination} not supported.")
+    stream_files[stream].parent.mkdir(parents=True, exist_ok=True)
+
+    with stream_files[stream].open("w", encoding="utf-8") as outfile:
+        logging.info(f"Writing to file: {stream_files[stream]}")
+        for line in lines:
+            outfile.write(line)
+
+
+def write_lines_s3(destination, config, stream, lines):
+    if stream not in stream_files:
+        stream_files[stream] = get_file_path(
+            stream=stream, destination=destination, config=config
+        )
+    with open(stream_files[stream], "w", encoding="utf-8") as outfile:
+        logging.info(f"Writing to file: {stream_files[stream]}")
+        for line in lines:
+            outfile.write(line)
 
 
 def write_lines(config, stream, lines):
-    if stream not in stream_files:
-        stream_files[stream] = get_file_path(config, stream)
-
     destination = config.get("destination", "local")
     if destination == "local":
-        stream_files[stream].parent.mkdir(parents=True, exist_ok=True)
-
-    with stream_files[stream].open("w") as outfile:
-        for line in lines:
-            outfile.write(line)
+        return write_lines_local(
+            destination=destination,
+            config=config[destination],
+            stream=stream,
+            lines=lines,
+        )
+    elif destination == "s3":
+        return write_lines_s3(
+            destination=destination,
+            config=config[destination],
+            stream=stream,
+            lines=lines,
+        )
 
 
 def persist_lines(config, lines):
