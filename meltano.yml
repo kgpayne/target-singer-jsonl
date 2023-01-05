@@ -46,6 +46,8 @@ plugins:
       kind: string
     - name: s3.paths
       kind: array
+    - name: add_record_metadata
+      kind: boolean
   - name: tap-carbon-intensity
     variant: meltano
     pip_url: git+https://gitlab.com/meltano/tap-carbon-intensity.git
