@@ -196,7 +196,8 @@ def persist_lines(config, lines):
             raise Exception(f"Unknown message type {t} in message {message}")
 
     for stream, messages in stream_lines.items():
-        write_lines(config, stream, messages)
+        if len[messages] > 1:  # don't write SCHEMA without any RECORDs
+            write_lines(config, stream, messages)
 
     return state
 
