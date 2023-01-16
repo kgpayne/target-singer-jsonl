@@ -41,14 +41,6 @@ def urljoin(*args):
     return reduce(join_slash, args) if args else ""
 
 
-def emit_state(state):
-    if state is not None:
-        line = json.dumps(state)
-        logger.debug(f"Emitting state {line}")
-        sys.stdout.write(f"{line}\n")
-        sys.stdout.flush()
-
-
 def get_file_path(stream, destination, config):
     filename = f"{stream}/{stream}-{file_timestamp}.singer.gz"
     if destination == "local":
@@ -101,6 +93,14 @@ def write_lines(config, stream, lines):
             stream=stream,
             lines=lines,
         )
+
+
+def emit_state(state):
+    if state is not None:
+        line = json.dumps(state)
+        logger.debug(f"Emitting state {line}")
+        sys.stdout.write(f"{line}\n")
+        sys.stdout.flush()
 
 
 def persist_lines(config, lines):
@@ -196,7 +196,7 @@ def persist_lines(config, lines):
             raise Exception(f"Unknown message type {t} in message {message}")
 
     for stream, messages in stream_lines.items():
-        if len[messages] > 1:  # don't write SCHEMA without any RECORDs
+        if len(messages) > 1:  # don't write SCHEMA without any RECORDs
             write_lines(config, stream, messages)
 
     return state
