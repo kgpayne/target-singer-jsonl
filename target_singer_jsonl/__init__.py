@@ -44,8 +44,9 @@ def urljoin(*args):
     return reduce(join_slash, args) if args else ""
 
 
-def get_file_path(destination, config):
-    filename = f"/{file_timestamp}.gz"
+def get_file_path(stream, destination, config):
+    logger.info(f"STREAM_NAME: {stream}")
+    filename = f"{stream}/{stream}-{file_timestamp}.singer.gz"
     if destination == "local":
         return Path(config["folder"]).joinpath(filename)
     elif destination == "s3":
@@ -59,7 +60,7 @@ def get_file_path(destination, config):
 def write_lines_local(destination, config, stream, lines):
     if stream not in stream_files:
         stream_files[stream] = get_file_path(
-            destination=destination, config=config
+            stream=stream, destination=destination, config=config
         )
     stream_files[stream].parent.mkdir(parents=True, exist_ok=True)
 
@@ -72,12 +73,13 @@ def write_lines_local(destination, config, stream, lines):
 def write_lines_s3(destination, config, stream, lines):
     if stream not in stream_files:
         stream_files[stream] = get_file_path(
-            destination=destination, config=config
+            stream=stream, destination=destination, config=config
         )
     logger.info(f"stream files: {stream_files}")
     with open(stream_files[stream], "w", encoding="utf-8") as outfile:
         logging.info(f"Writing to file: {stream_files[stream]}")
         for line in lines:
+            logger.info(f"line: {line}")
             outfile.write(line + "\n")
 
 
@@ -126,7 +128,6 @@ def persist_lines(config, lines):
         export_raw_data = True
     # Loop over lines from stdin
     for line in lines:
-        logger.info(f"line: {line}")
         try:
             message = json.loads(line)
         except json.decoder.JSONDecodeError:
