@@ -10,6 +10,9 @@ from datetime import datetime
 from functools import reduce
 from pathlib import Path
 
+from boto3 import setup_default_session
+from botocore.config import Config
+
 from jsonschema.validators import Draft4Validator
 from smart_open import open
 from smart_open.smart_open_lib import patch_pathlib
@@ -48,7 +51,7 @@ def get_file_path(stream, destination, config):
     elif destination == "s3":
         bucket = config["bucket"]
         prefix = config["prefix"]
-        return urljoin(f"s3://{bucket}/{prefix}/", filename)
+        return urljoin(f"s3://{bucket}{prefix}/", filename)
     else:
         raise KeyError(f"Destination {destination} not supported.")
 
@@ -78,7 +81,8 @@ def write_lines_s3(destination, config, stream, lines):
             outfile.write(line + "\n")
 
 
-def write_lines(config, stream, lines):
+
+def write_lines(config, stream, lines, s3_client=None):
     destination = config.get("destination", "local")
     if destination == "local":
         return write_lines_local(
@@ -111,6 +115,13 @@ def persist_lines(config, lines):
     key_properties = {}
     validators = {}
     add_record_metadata = config.get("add_record_metadata", True)
+    if credentials := config.get("credentials"):
+        # Set up the default session to use the passed credentials.
+        setup_default_session(
+            aws_access_key_id=credentials["aws_access_key_id"],
+            aws_secret_access_key=credentials["aws_secret_access_key"],
+            aws_session_token=credentials["aws_session_token"],
+        )
 
     # Loop over lines from stdin
     for line in lines:
