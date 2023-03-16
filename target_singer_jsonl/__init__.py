@@ -71,6 +71,7 @@ def write_lines_s3(destination, config, stream, lines):
         stream_files[stream] = get_file_path(
             stream=stream, destination=destination, config=config
         )
+    logger.info(f"stream files: {stream_files}")
     with open(stream_files[stream], "w", encoding="utf-8") as outfile:
         logging.info(f"Writing to file: {stream_files[stream]}")
         for line in lines:
@@ -87,6 +88,7 @@ def write_lines(config, stream, lines):
             lines=lines,
         )
     elif destination == "s3":
+        logger.info(f"destination is s3")
         return write_lines_s3(
             destination=destination,
             config=config[destination],
@@ -112,6 +114,7 @@ def persist_lines(config, lines):
 
     # Loop over lines from stdin
     for line in lines:
+        logger.info(f"line: {line}")
         try:
             message = json.loads(line)
         except json.decoder.JSONDecodeError:
@@ -212,7 +215,7 @@ def main():
             config = json.load(input)
     else:
         config = {}
-
+    logger.info(f"arguments: {args}")
     input = io.TextIOWrapper(sys.stdin.buffer, encoding="utf-8")
     state = persist_lines(config, input)
 
