@@ -81,8 +81,7 @@ def write_lines_s3(destination, config, stream, lines):
             outfile.write(line + "\n")
 
 
-
-def write_lines(config, stream, lines, s3_client=None):
+def write_lines(config, stream, lines):
     destination = config.get("destination", "local")
     if destination == "local":
         return write_lines_local(
@@ -114,6 +113,7 @@ def persist_lines(config, lines):
     schemas = {}
     key_properties = {}
     validators = {}
+    export_raw_data = False
     add_record_metadata = config.get("add_record_metadata", True)
     if credentials := config.get("credentials"):
         # Set up the default session to use the passed credentials.
@@ -122,7 +122,8 @@ def persist_lines(config, lines):
             aws_secret_access_key=credentials["aws_secret_access_key"],
             aws_session_token=credentials["aws_session_token"],
         )
-
+    if config.get("export_raw_data"):
+        export_raw_data = True
     # Loop over lines from stdin
     for line in lines:
         logger.info(f"line: {line}")
@@ -152,11 +153,10 @@ def persist_lines(config, lines):
                 )
 
             record = message["record"]
-            # Get schema for this record's stream
-            # schema = schemas[stream]
-            # # Validate record
-            # validators[stream].validate(record)
-            # Process record
+
+            if config.get("validate_schema"):
+                # Validate record
+                validators[stream].validate(record)
             if add_record_metadata:
                 now = datetime.now().isoformat()
                 record.update(
@@ -173,7 +173,10 @@ def persist_lines(config, lines):
                 )
             # Queue message for write
             state = None
-            stream_lines[stream].append(json.dumps(message))
+            if export_raw_data:
+                stream_lines[stream].append(json.dumps(message["record"]))
+            else:
+                stream_lines[stream].append(json.dumps(message))
 
         elif t == "SCHEMA":
             schemas[stream] = message["schema"]
@@ -197,7 +200,8 @@ def persist_lines(config, lines):
                 for col in {"_sdc_sequence", "_sdc_table_version"}:
                     properties_dict[col] = {"type": ["null", "integer"]}
             # Queue message for write
-            stream_lines[stream].append(json.dumps(message))
+            if not export_raw_data:
+                stream_lines[stream].append(json.dumps(message))
 
         elif t == "STATE":
             # persisting STATE messages is problematic when splitting records into separate
