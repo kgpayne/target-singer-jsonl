@@ -44,8 +44,8 @@ def urljoin(*args):
     return reduce(join_slash, args) if args else ""
 
 
-def get_file_path(stream, destination, config):
-    filename = f"{stream}/{stream}-{file_timestamp}.singer.gz"
+def get_file_path(destination, config):
+    filename = f"/{file_timestamp}.gz"
     if destination == "local":
         return Path(config["folder"]).joinpath(filename)
     elif destination == "s3":
@@ -153,9 +153,9 @@ def persist_lines(config, lines):
 
             record = message["record"]
             # Get schema for this record's stream
-            schema = schemas[stream]
-            # Validate record
-            validators[stream].validate(record)
+            # schema = schemas[stream]
+            # # Validate record
+            # validators[stream].validate(record)
             # Process record
             if add_record_metadata:
                 now = datetime.now().isoformat()
