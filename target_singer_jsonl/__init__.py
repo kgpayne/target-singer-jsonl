@@ -113,7 +113,10 @@ def persist_lines(config, lines):
     # Loop over lines from stdin
     for line in lines:
         try:
-            message = json.loads(line)
+            message = json.loads(
+                line,
+                parse_float=decimal.Decimal,
+            )
         except json.decoder.JSONDecodeError:
             logger.error(f"Unable to parse:\n{line}")
             raise
