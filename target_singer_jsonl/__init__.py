@@ -192,6 +192,10 @@ def persist_lines(config, lines):
             logger.debug(f'Setting state to {message["value"]}')
             state = message["value"]
 
+        elif t == "ACTIVATE_VERSION":
+            # ignore ACTIVATE_VERSION as it doesn't make sense in the context of jsonl files
+            pass
+
         else:
             raise Exception(f"Unknown message type {t} in message {message}")
 
